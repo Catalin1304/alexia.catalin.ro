@@ -507,23 +507,31 @@
   const now = () => performance.now();
 
   // ---------- sound ----------
-  const damageSounds = [];
-  for (let i = 1; i <= 3; i++) {
-    const sound = new Audio(`damage${i}.mp3`);
-    sound.volume = 0.5;
-    damageSounds.push(sound);
-  }
-  const playDamageSound = () => {
-    const randomSound = damageSounds[Math.floor(Math.random() * damageSounds.length)];
-    randomSound.currentTime = 0;
-    randomSound.play().catch(() => {});
-  };
+  const damageSounds = [
+    new Audio('damage1.mp3'),
+    new Audio('damage2.mp3'),
+    new Audio('damage3.mp3')
+  ];
+  damageSounds.forEach(sound => sound.volume = 0.8);
   
-  const bossDeath = new Audio('omorboss.mp3');
-  bossDeath.volume = 0.7;
-  const playBossDeathSound = () => {
-    bossDeath.currentTime = 0;
-    bossDeath.play().catch(() => {});
+  const playDamageSound = () => {
+    try {
+      const randomSound = damageSounds[Math.floor(Math.random() * 3)];
+      randomSound.currentTime = 0;
+      randomSound.play().catch(() => {});
+    } catch(e) {}
+  };
+
+  // Background music
+  const bgMusic = new Audio('background.mp3');
+  bgMusic.volume = 0.06;
+  bgMusic.loop = true;
+  let musicStarted = false;
+  const startBackgroundMusic = () => {
+    if (!musicStarted) {
+      bgMusic.play().catch(() => {});
+      musicStarted = true;
+    }
   };
 
   // ---------- character images ----------
@@ -1069,6 +1077,7 @@
     charOptions.forEach((opt, i) => {
       opt.classList.toggle('selected', i === selectedCharacter);
       opt.onclick = () => {
+        startBackgroundMusic();
         selectedCharacter = i;
         usePlayerImg = characterImgsLoaded[i];
         saveProgress();
@@ -1099,6 +1108,7 @@
 
   function startLevel(levelId) {
     currentLevelConfig = LEVELS.find(l => l.id === levelId);
+    startBackgroundMusic();
     hideMenu();
     reset();
     running = true;
@@ -1229,7 +1239,6 @@
         explode(boss.x, boss.y, 12);
         if (boss.hp <= 0) {
           explode(boss.x, boss.y, 60);
-          playBossDeathSound();
           level.bossDefeated = true;
         }
       } else {
@@ -1883,7 +1892,6 @@
           explode(b.x, b.y, 8);
           if (boss.hp <= 0) {
             explode(boss.x, boss.y, 60);
-            playBossDeathSound();
             level.bossDefeated = true;
           }
         }
@@ -2606,6 +2614,7 @@
   
   // Debug toggle handler
   document.getElementById("debugToggle").onclick = () => {
+    startBackgroundMusic();
     debugMode = !debugMode;
     const debugBtn = document.getElementById("debugToggle");
     if (debugMode) {
