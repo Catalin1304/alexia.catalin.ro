@@ -418,6 +418,56 @@
     .debug-toggle.active:hover {
       background: rgba(255,80,120,.5);
     }
+    
+    /* Music Volume Slider */
+    .music-volume {
+      margin-top: 10px;
+      padding: 10px 20px;
+      background: rgba(100,100,120,.2);
+      border: 2px solid rgba(255,255,255,.15);
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: center;
+    }
+    .music-volume-label {
+      color: #e9e9ff;
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .music-volume input[type="range"] {
+      width: 100%;
+      max-width: 200px;
+      height: 6px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: rgba(255,255,255,.15);
+      border-radius: 3px;
+      outline: none;
+    }
+    .music-volume input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      background: #ff6090;
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(255,80,120,.4);
+    }
+    .music-volume input[type="range"]::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      background: #ff6090;
+      border-radius: 50%;
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 2px 8px rgba(255,80,120,.4);
+    }
   </style>
 </head>
 <body>
@@ -440,6 +490,10 @@
   </div>
   <div class="debug-toggle" id="debugToggle">
     🐛 Debug Mode: OFF
+  </div>
+  <div class="music-volume">
+    <div class="music-volume-label">🎵 Volum Muzică</div>
+    <input type="range" id="musicVolumeSlider" min="0" max="100" value="6" />
   </div>
   <div class="level-grid" id="levelGrid"></div>
 </div>
@@ -507,6 +561,8 @@
   const now = () => performance.now();
 
   // ---------- sound ----------
+  let musicVolume = 0.06;
+  
   const damageSounds = [
     new Audio('damage1.mp3'),
     new Audio('damage2.mp3'),
@@ -524,7 +580,7 @@
 
   // Background music
   const bgMusic = new Audio('background.mp3');
-  bgMusic.volume = 0.06;
+  bgMusic.volume = musicVolume;
   bgMusic.loop = true;
   let musicStarted = false;
   const startBackgroundMusic = () => {
@@ -532,6 +588,11 @@
       bgMusic.play().catch(() => {});
       musicStarted = true;
     }
+  };
+  
+  const updateMusicVolume = (volume) => {
+    musicVolume = volume;
+    bgMusic.volume = volume;
   };
 
   // ---------- character images ----------
@@ -1034,6 +1095,11 @@
         const data = JSON.parse(saved);
         gameProgress = data;
         if (data.selectedCharacter !== undefined) selectedCharacter = data.selectedCharacter;
+        if (data.musicVolume !== undefined) {
+          musicVolume = data.musicVolume;
+          bgMusic.volume = musicVolume;
+          document.getElementById("musicVolumeSlider").value = Math.round(musicVolume * 100);
+        }
       } catch (e) {}
     }
     // Update unlock status
@@ -1043,7 +1109,7 @@
   }
 
   function saveProgress() {
-    const data = { ...gameProgress, selectedCharacter };
+    const data = { ...gameProgress, selectedCharacter, musicVolume };
     localStorage.setItem("valentineShooterProgress", JSON.stringify(data));
   }
 
@@ -2625,6 +2691,17 @@
       debugBtn.classList.remove("active");
     }
   };
+  
+  // Music volume slider handler
+  const volumeSlider = document.getElementById("musicVolumeSlider");
+  volumeSlider.addEventListener("input", (e) => {
+    const volume = parseInt(e.target.value) / 100;
+    updateMusicVolume(volume);
+    saveProgress();
+  });
+  volumeSlider.addEventListener("change", () => {
+    startBackgroundMusic();
+  });
   
   showMenu();
   loop();
