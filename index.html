@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>Valentine Shooter</title>
+  <title>hai ca poti ale</title>
   <style>
-    html, body { margin:0; padding:0; height:100%; background:#0b0b10; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; overflow:hidden; touch-action: none; }
-    #wrap { height:100%; display:grid; place-items:center; }
+    html, body { margin:0; padding:0; height:100%; background:#000; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; overflow:hidden; touch-action: none; }
+    #wrap { height:100%; display:flex; align-items:center; justify-content:center; background:#0b0b10; }
     canvas { background: radial-gradient(1200px 800px at 50% 40%, #151528 0%, #0b0b10 55%, #07070b 100%); border-radius:0; box-shadow: none; display:block; }
     @media (min-width: 768px) {
       canvas { border-radius:16px; box-shadow: 0 20px 80px rgba(0,0,0,.6); }
@@ -28,6 +28,34 @@
       backdrop-filter: blur(8px);
     }
     @media (min-width: 768px) { .menu-btn-mobile { display: none; } }
+    
+    .reset-btn-mobile {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      padding: 16px 32px; border-radius: 12px;
+      background: rgba(255,80,120,.9); border: 3px solid rgba(255,255,255,.4);
+      color: #fff; font-size: 18px; font-weight: 700;
+      box-shadow: 0 8px 24px rgba(0,0,0,.5);
+      z-index: 150; cursor: pointer;
+      display: none;
+      backdrop-filter: blur(8px);
+    }
+    .reset-btn-mobile.show { display: block; }
+    @media (min-width: 768px) { .reset-btn-mobile { display: none !important; } }
+    
+    .mobile-game-btns {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      display: none; flex-direction: column; gap: 16px; z-index: 150;
+    }
+    .mobile-game-btns.show { display: flex; }
+    @media (min-width: 768px) { .mobile-game-btns { display: none !important; } }
+    .mobile-game-btns button {
+      padding: 16px 40px; border-radius: 12px; border: 3px solid rgba(255,255,255,.4);
+      color: #fff; font-size: 18px; font-weight: 700;
+      box-shadow: 0 8px 24px rgba(0,0,0,.5);
+      cursor: pointer; backdrop-filter: blur(8px);
+    }
+    .mobile-game-btns .retry-btn { background: rgba(255,80,120,.9); }
+    .mobile-game-btns .menu-btn-game { background: rgba(100,100,120,.9); }
     .hud b { font-weight: 700; }
     .hud .k { opacity:.8 }
     .hud .row { display:flex; gap:12px; flex-wrap:wrap; }
@@ -120,6 +148,80 @@
     }
     .level-card .stars { position:absolute; top:12px; right:12px; font-size:14px; }
     
+    /* Character selection */
+    .char-selector {
+      margin-bottom: 16px;
+    }
+    .char-selector-label {
+      color: #e9e9ff;
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+    .char-options {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+    }
+    .char-option {
+      width: 80px;
+      height: 80px;
+      border: 3px solid rgba(255,255,255,.25);
+      border-radius: 16px;
+      cursor: pointer;
+      transition: all 0.25s;
+      background-size: cover;
+      background-position: center;
+      background-color: rgba(255,255,255,.08);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .char-num {
+      font-size: 32px;
+      font-weight: 800;
+      color: rgba(255,255,255,.4);
+      pointer-events: none;
+    }
+    .char-option:hover {
+      border-color: rgba(255,80,120,.6);
+      transform: scale(1.08);
+    }
+    .char-option.selected {
+      border-color: rgba(255,80,120,1);
+      box-shadow: 0 0 28px rgba(255,80,120,.7);
+      transform: scale(1.12);
+    }
+    .char-option.selected::after {
+      content: '✓';
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      background: rgba(255,80,120,1);
+      color: white;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: bold;
+    }
+    @media (min-width: 768px) {
+      .char-option {
+        width: 100px;
+        height: 100px;
+      }
+      .char-selector-label {
+        font-size: 20px;
+        margin-bottom: 14px;
+      }
+    }
+    
     /* Mobile Controls */
     .mobile-controls { position: fixed; bottom: 20px; right: 20px; pointer-events: all; z-index: 50; }
     @media (min-width: 768px) { .mobile-controls { display:none; } }
@@ -140,13 +242,175 @@
       box-shadow: 0 0 25px rgba(255,80,120,.7), 0 0 10px rgba(100,255,100,.5);
     }
     .shoot-btn:active { transform: scale(0.92); }
+    
+    /* Valentine Proposal Modal */
+    #valentineModal {
+      position: fixed;
+      inset: 0;
+      background: rgba(11,11,16,.98);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      backdrop-filter: blur(12px);
+    }
+    #valentineModal.show { display: flex; }
+    
+    .valentine-content {
+      text-align: center;
+      padding: 40px;
+      max-width: 600px;
+    }
+    .valentine-title {
+      font-size: 42px;
+      font-weight: 800;
+      color: #ff6090;
+      margin-bottom: 20px;
+      text-shadow: 0 4px 20px rgba(255,80,120,.6);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    
+    .valentine-buttons {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      margin-top: 40px;
+      flex-wrap: wrap;
+    }
+    .valentine-btn {
+      padding: 18px 48px;
+      font-size: 24px;
+      font-weight: 700;
+      border-radius: 16px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 8px 24px rgba(0,0,0,.3);
+    }
+    .valentine-btn.yes {
+      background: linear-gradient(135deg, #ff6090, #ff3366);
+      color: white;
+    }
+    .valentine-btn.yes:hover {
+      transform: scale(1.08);
+      box-shadow: 0 12px 32px rgba(255,80,120,.6);
+    }
+    .valentine-btn.no {
+      background: rgba(100,100,120,.6);
+      color: white;
+      position: relative;
+    }
+    .valentine-btn.no.hide {
+      animation: noButtonBreak 1s forwards;
+    }
+    @keyframes noButtonBreak {
+      0% { transform: scale(1) rotate(0deg); opacity: 1; }
+      30% { transform: scale(1.3) rotate(10deg); }
+      60% { transform: scale(1.5) rotate(-15deg); }
+      80% { transform: scale(1.7) rotate(20deg); opacity: 0.5; }
+      100% { 
+        transform: scale(0) rotate(360deg); 
+        opacity: 0;
+        display: none;
+      }
+    }
+    
+    .gift-section {
+      margin-top: 30px;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.5s;
+    }
+    .gift-section.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    .confetti {
+      position: fixed;
+      width: 10px;
+      height: 10px;
+      background: #ff6090;
+      position: absolute;
+      pointer-events: none;
+    }
+    
+    .celebration {
+      position: fixed;
+      inset: 0;
+      display: none;
+      pointer-events: none;
+      z-index: 1001;
+    }
+    .celebration.active { display: block; }
+    
+    .congrats-message {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 64px;
+      font-weight: 900;
+      color: #ff6090;
+      text-shadow: 0 4px 30px rgba(255,80,120,.8);
+      animation: celebrationPop 0.8s ease-out;
+      text-align: center;
+      padding: 20px;
+    }
+    @keyframes celebrationPop {
+      0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+      50% { transform: translate(-50%, -50%) scale(1.2); }
+      100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    }
+    
+    @media (max-width: 768px) {
+      .valentine-title { font-size: 32px; }
+      .valentine-btn { padding: 14px 36px; font-size: 20px; }
+      .congrats-message { font-size: 42px; }
+    }
   </style>
 </head>
 <body>
 <div id="menu">
-  <h1>💕 Valentine Shooter</h1>
-  <div class="subtitle">Alege nivelul tău</div>
+  <h1>💕 hai ca poti ale</h1>
+  <div class="subtitle"></div>
+  <div class="char-selector">
+    <div class="char-selector-label">🎭 cu cine joci ?</div>
+    <div class="char-options" id="charOptions">
+      <div class="char-option" data-char="0">
+        <div class="char-num">1</div>
+      </div>
+      <div class="char-option" data-char="1">
+        <div class="char-num">2</div>
+      </div>
+      <div class="char-option" data-char="2">
+        <div class="char-num">3</div>
+      </div>
+    </div>
+  </div>
   <div class="level-grid" id="levelGrid"></div>
+</div>
+
+<div id="valentineModal">
+  <div class="valentine-content">
+    <div class="valentine-title">💕 Wanna be my Valentine? 💕</div>
+    <div class="valentine-buttons" id="valentineButtons">
+      <button class="valentine-btn yes" id="yesBtn">Yes! 💖</button>
+      <button class="valentine-btn no" id="noBtn">No</button>
+    </div>
+    <div class="gift-section" id="giftSection">
+      <button class="valentine-btn yes" id="collectGiftBtn">🎁 Collect Gift</button>
+    </div>
+  </div>
+</div>
+
+<div class="celebration" id="celebration">
+  <div class="congrats-message" id="congratsMsg"></div>
 </div>
 
 <div id="wrap">
@@ -154,6 +418,10 @@
 </div>
 <div class="hud" id="hud"></div>
 <div class="menu-btn-mobile" id="menuBtn" title="Menu">☰</div>
+<div class="mobile-game-btns" id="gameBtns">
+  <button class="retry-btn" id="retryBtn">🔄 Retry</button>
+  <button class="menu-btn-game" id="menuBtnGame">🏠 Main Menu</button>
+</div>
 <div class="powerups" id="powerups">
   <div class="powerup-btn" id="shieldBtn" title="Shield - Invincibility 2.5s">
     <div class="icon">🛡️</div>
@@ -181,7 +449,7 @@
 (() => {
   const canvas = document.getElementById("c");
   const ctx = canvas.getContext("2d");
-  const W = canvas.width, H = canvas.height;
+  let W = canvas.width, H = canvas.height;
 
   // ---------- utils ----------
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -198,15 +466,71 @@
     damageSound.play().catch(() => {});
   };
 
-  // ---------- player image ----------
-  const playerImg = new Image();
-  playerImg.src = 'player.png';
-  const playerImgLoaded = new Promise(resolve => {
-    playerImg.onload = () => resolve(true);
-    playerImg.onerror = () => resolve(false);
-  });
+  // ---------- character images ----------
+  const characterImgs = [];
+  const characterImgPromises = [];
+  const characterImgsLoaded = [false, false, false];
+  for (let i = 1; i <= 3; i++) {
+    const img = new Image();
+    img.src = `caracter${i}.jpeg`;
+    characterImgs.push(img);
+    const idx = i - 1;
+    characterImgPromises.push(new Promise(resolve => {
+      img.onload = () => { characterImgsLoaded[idx] = true; resolve(true); };
+      img.onerror = () => { characterImgsLoaded[idx] = false; resolve(false); };
+    }));
+  }
+  let selectedCharacter = 0;
   let usePlayerImg = false;
-  playerImgLoaded.then(loaded => { usePlayerImg = loaded; });
+  Promise.all(characterImgPromises).then(results => {
+    usePlayerImg = results[selectedCharacter];
+    // Set background images for character options
+    const charOptions = document.querySelectorAll('.char-option');
+    charOptions.forEach((opt, i) => {
+      if (results[i]) {
+        opt.style.backgroundImage = `url('caracter${i+1}.jpeg')`;
+        // Hide number if image loaded
+        const numEl = opt.querySelector('.char-num');
+        if (numEl) numEl.style.display = 'none';
+      }
+    });
+  });
+
+  // ---------- enemy images (3 variants) ----------
+  const enemyImgs = [];
+  const enemyImgPromises = [];
+  for (let i = 1; i <= 3; i++) {
+    const img = new Image();
+    img.src = `bun${i}.jpeg`;
+    enemyImgs.push(img);
+    enemyImgPromises.push(new Promise(resolve => {
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+    }));
+  }
+  let useEnemyImg = false;
+  Promise.all(enemyImgPromises).then(results => {
+    useEnemyImg = results.every(r => r);
+  });
+
+  // ---------- drop images ----------
+  const dropImgs = {
+    damage: new Image(),
+    fireRate: new Image(),
+    spread: new Image()
+  };
+  dropImgs.damage.src = 'dmg.png';
+  dropImgs.fireRate.src = 'fr.png';
+  dropImgs.spread.src = 'sp.png';
+  
+  const dropImgsLoaded = {};
+  ['damage', 'fireRate', 'spread'].forEach(type => {
+    const promise = new Promise(resolve => {
+      dropImgs[type].onload = () => resolve(true);
+      dropImgs[type].onerror = () => resolve(false);
+    });
+    promise.then(loaded => { dropImgsLoaded[type] = loaded; });
+  });
 
   // ---------- input ----------
   const keys = new Set();
@@ -250,30 +574,68 @@
   
   // Menu button (mobile)
   document.getElementById("menuBtn").addEventListener("click", showMenu);
+  
+  // Game buttons (mobile) - retry and menu
+  const gameBtns = document.getElementById("gameBtns");
+  const retryBtn = document.getElementById("retryBtn");
+  const menuBtnGame = document.getElementById("menuBtnGame");
+  
+  retryBtn.addEventListener("click", () => {
+    gameBtns.classList.remove("show");
+    if (level.bossDefeated) {
+      // Next level
+      const nextLevelId = currentLevelConfig.id + 1;
+      if (nextLevelId <= LEVELS.length) {
+        startLevel(nextLevelId);
+      } else {
+        showMenu();
+      }
+    } else {
+      // Retry current level
+      reset();
+      running = true;
+    }
+  });
+  
+  menuBtnGame.addEventListener("click", () => {
+    gameBtns.classList.remove("show");
+    showMenu();
+  });
 
   // ---------- Mobile/Touch Controls ----------
-  // Canvas responsive sizing
+  // Canvas responsive sizing - adjust logical dimensions for aspect ratio
   function resizeCanvas() {
-    const ratio = 900 / 600;
     const w = window.innerWidth;
     const h = window.innerHeight;
+    const ratio = w / h;
     
-    // On mobile, make it fullscreen
-    if (w < 768) {
-      canvas.style.width = w + 'px';
-      canvas.style.height = h + 'px';
+    // Adjust canvas logical size based on screen aspect ratio
+    // Base width at 900, calculate height to match screen ratio
+    if (ratio < 1) {
+      // Portrait mode (mobile) - increase vertical FOV
+      canvas.width = 900;
+      canvas.height = Math.floor(900 / ratio);
     } else {
-      // Desktop: maintain aspect ratio
-      if (w / h > ratio) {
-        canvas.style.height = h + 'px';
-        canvas.style.width = (h * ratio) + 'px';
-      } else {
-        canvas.style.width = w + 'px';
-        canvas.style.height = (w / ratio) + 'px';
-      }
+      // Landscape - keep original or adjust
+      canvas.width = 900;
+      canvas.height = 600;
+    }
+    
+    // Update global dimensions
+    W = canvas.width;
+    H = canvas.height;
+    
+    // Style to fullscreen
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    
+    // Reposition player if game is running
+    if (running && player) {
+      player.y = H * 0.82;
     }
   }
-  resizeCanvas();
+  
+  // Note: First call moved after player initialization
   window.addEventListener('resize', resizeCanvas);
   
   // Prevent default touch behaviors (scroll, zoom) when playing
@@ -368,8 +730,8 @@
   const LEVELS = [
     {
       id: 1,
-      title: "Prima întâlnire",
-      desc: "Basic enemies",
+      title: "asa de inceput sa te vedem",
+      desc: "bafta",
       waves: 6,
       enemyType: "small",
       bossPattern: "rain",
@@ -378,8 +740,8 @@
     },
     {
       id: 2,
-      title: "Prima ieșire",
-      desc: "Shielded enemies 🛡️",
+      title: "te pup frumoaso",
+      desc: "astia au scuturi 🛡️",
       waves: 7,
       enemyType: "shielded",
       bossPattern: "circular",
@@ -388,8 +750,8 @@
     },
     {
       id: 3,
-      title: "Prima sărutare",
-      desc: "Fast enemies ⚡",
+      title: "VEZI CA SUNT MAI RAPIZI",
+      desc: "fug tare astia⚡",
       waves: 8,
       enemyType: "fast",
       bossPattern: "laser",
@@ -398,8 +760,8 @@
     },
     {
       id: 4,
-      title: "Declarația finală",
-      desc: "Shooter enemies 🔫",
+      title: "SE TRAGE",
+      desc: "sa te feresti inima mea 🔫",
       waves: 9,
       enemyType: "shooter",
       bossPattern: "dash",
@@ -408,8 +770,8 @@
     },
     {
       id: 5,
-      title: "Testul dublu",
-      desc: "Mini-bosses 👥",
+      title: "putin mai hard",
+      desc: "da te descurci micuta mea 👥",
       waves: 7,
       enemyType: "small",
       bossPattern: "miniboss",
@@ -418,8 +780,8 @@
     },
     {
       id: 6,
-      title: "Furtună de meteori",
-      desc: "Meteor shower ☄️",
+      title: "astia vin asa mai rapid ca meteorii",
+      desc: "esti viata mea ☄️",
       waves: 8,
       enemyType: "meteor",
       bossPattern: "rain",
@@ -428,8 +790,8 @@
     },
     {
       id: 7,
-      title: "Dispariție magică",
-      desc: "Teleporting enemies ✨",
+      title: "si mai greut",
+      desc: "✨",
       waves: 9,
       enemyType: "teleport",
       bossPattern: "circular",
@@ -438,8 +800,8 @@
     },
     {
       id: 8,
-      title: "Multiplicare",
-      desc: "Split enemies 🧬",
+      title: "astia se impart",
+      desc: "ca niste slime-uri pe mc 🧬",
       waves: 8,
       enemyType: "split",
       bossPattern: "laser",
@@ -448,8 +810,8 @@
     },
     {
       id: 9,
-      title: "Asaltul final",
-      desc: "Kamikaze rush 💥",
+      title: "astia se sparg kamikaze",
+      desc: "Kamikaze 💥",
       waves: 9,
       enemyType: "kamikaze",
       bossPattern: "dash",
@@ -458,8 +820,8 @@
     },
     {
       id: 10,
-      title: "Apărare perfectă",
-      desc: "Invincible phases 🔰",
+      title: "ia vezi daca poti sa-i omori",
+      desc: "🔰",
       waves: 8,
       enemyType: "invincible",
       bossPattern: "rain",
@@ -468,8 +830,8 @@
     },
     {
       id: 11,
-      title: "Armată grea",
-      desc: "Tank enemies 🏋️",
+      title: "sunt mai tanci astia",
+      desc: "Tank 🏋️",
       waves: 9,
       enemyType: "tank",
       bossPattern: "circular",
@@ -478,8 +840,8 @@
     },
     {
       id: 12,
-      title: "Vârtej cosmic",
-      desc: "Spiral pattern 🌀",
+      title: "vin ca pastele alea in spirale ",
+      desc: "georgiana mea 🌀",
       waves: 8,
       enemyType: "spiral",
       bossPattern: "laser",
@@ -488,8 +850,8 @@
     },
     {
       id: 13,
-      title: "Haosul total",
-      desc: "Chaos mode 🎲",
+      title: "Haos acilea",
+      desc: "🎲",
       waves: 10,
       enemyType: "chaos",
       bossPattern: "dash",
@@ -498,8 +860,8 @@
     },
     {
       id: 14,
-      title: "Te iubesc! 💕",
-      desc: "Valentine Final Boss 💝",
+      title: "il mai ai pe asta si gata 💕",
+      desc: "Final Boss 💝",
       waves: 8,
       enemyType: "valentine",
       bossPattern: "valentine",
@@ -557,7 +919,7 @@
 
   const player = {
     x: W * 0.5, y: H * 0.82,
-    r: 28,
+    r: 48,
     speed: 500,
     hp: 6,
     invUntil: 0,
@@ -600,7 +962,9 @@
     const saved = localStorage.getItem("valentineShooterProgress");
     if (saved) {
       try {
-        gameProgress = JSON.parse(saved);
+        const data = JSON.parse(saved);
+        gameProgress = data;
+        if (data.selectedCharacter !== undefined) selectedCharacter = data.selectedCharacter;
       } catch (e) {}
     }
     // Update unlock status
@@ -610,7 +974,8 @@
   }
 
   function saveProgress() {
-    localStorage.setItem("valentineShooterProgress", JSON.stringify(gameProgress));
+    const data = { ...gameProgress, selectedCharacter };
+    localStorage.setItem("valentineShooterProgress", JSON.stringify(data));
   }
 
   function showMenu() {
@@ -618,6 +983,7 @@
     document.getElementById("menu").classList.remove("hidden");
     document.getElementById("wrap").style.display = "none";
     document.getElementById("powerups").style.display = "none";
+    document.getElementById("gameBtns").classList.remove("show");
     renderLevelGrid();
   }
 
@@ -625,11 +991,24 @@
     document.getElementById("menu").classList.add("hidden");
     document.getElementById("wrap").style.display = "grid";
     document.getElementById("powerups").style.display = "flex";
+    document.getElementById("gameBtns").classList.remove("show");
   }
 
   function renderLevelGrid() {
     const grid = document.getElementById("levelGrid");
     grid.innerHTML = "";
+    
+    // Update character selection
+    const charOptions = document.querySelectorAll('.char-option');
+    charOptions.forEach((opt, i) => {
+      opt.classList.toggle('selected', i === selectedCharacter);
+      opt.onclick = () => {
+        selectedCharacter = i;
+        usePlayerImg = characterImgsLoaded[i];
+        saveProgress();
+        renderLevelGrid();
+      };
+    });
     
     LEVELS.forEach(lv => {
       const card = document.createElement("div");
@@ -813,64 +1192,64 @@
     const type = currentLevelConfig.enemyType;
     
     if (type === "small") {
-      const r = rand(24, 32);
+      const r = rand(40, 50);
       const hp = 2;
       const speed = rand(90, 150);
-      enemies.push({ type: "small", x, y, r, hp, maxHp: hp, speed, vx: rand(-30, 30), shootTimer: 0 });
+      enemies.push({ type: "small", x, y, r, hp, maxHp: hp, speed, vx: rand(-30, 30), shootTimer: 0, bunVariant: Math.floor(Math.random() * 3) });
     }
     else if (type === "shielded") {
-      const r = rand(26, 34);
+      const r = rand(42, 52);
       const hp = 4;
       const speed = rand(80, 130);
-      enemies.push({ type: "shielded", x, y, r, hp, maxHp: hp, speed, vx: rand(-25, 25), shootTimer: 0, shielded: true });
+      enemies.push({ type: "shielded", x, y, r, hp, maxHp: hp, speed, vx: rand(-25, 25), shootTimer: 0, shielded: true, bunVariant: Math.floor(Math.random() * 3) });
     }
     else if (type === "fast") {
-      const r = rand(20, 28);
+      const r = rand(35, 45);
       const hp = 2;
       const speed = rand(180, 260);
-      enemies.push({ type: "fast", x, y, r, hp, maxHp: hp, speed, vx: rand(-60, 60), shootTimer: 0 });
+      enemies.push({ type: "fast", x, y, r, hp, maxHp: hp, speed, vx: rand(-60, 60), shootTimer: 0, bunVariant: Math.floor(Math.random() * 3) });
     }
     else if (type === "shooter") {
-      const r = rand(24, 32);
+      const r = rand(40, 50);
       const hp = 3;
       const speed = rand(70, 110);
-      enemies.push({ type: "shooter", x, y, r, hp, maxHp: hp, speed, vx: rand(-20, 20), shootTimer: 2.5 });
+      enemies.push({ type: "shooter", x, y, r, hp, maxHp: hp, speed, vx: rand(-20, 20), shootTimer: 2.5, bunVariant: Math.floor(Math.random() * 3) });
     }
     else if (type === "meteor") {
-      const r = rand(28, 38);
+      const r = rand(48, 60);
       const hp = 3;
       const speed = rand(200, 300);
-      enemies.push({ type: "meteor", x, y, r, hp, maxHp: hp, speed, vx: 0, shootTimer: 0, trail: [] });
+      enemies.push({ type: "meteor", x, y, r, hp, maxHp: hp, speed, vx: 0, shootTimer: 0, trail: [], bunVariant: Math.floor(Math.random() * 3) });
     }
     else if (type === "teleport") {
-      const r = rand(24, 32);
+      const r = rand(40, 50);
       const hp = 3;
       const speed = rand(80, 120);
-      enemies.push({ type: "teleport", x, y, r, hp, maxHp: hp, speed, vx: rand(-30, 30), shootTimer: 0, teleportTimer: rand(2, 4) });
+      enemies.push({ type: "teleport", x, y, r, hp, maxHp: hp, speed, vx: rand(-30, 30), shootTimer: 0, teleportTimer: rand(2, 4), bunVariant: Math.floor(Math.random() * 3) });
     }
     else if (type === "split") {
-      const r = rand(26, 34);
+      const r = rand(42, 52);
       const hp = 3;
       const speed = rand(90, 140);
-      enemies.push({ type: "split", x, y, r, hp, maxHp: hp, speed, vx: rand(-30, 30), shootTimer: 0, canSplit: true });
+      enemies.push({ type: "split", x, y, r, hp, maxHp: hp, speed, vx: rand(-30, 30), shootTimer: 0, canSplit: true, bunVariant: Math.floor(Math.random() * 3) });
     }
     else if (type === "kamikaze") {
-      const r = rand(24, 30);
+      const r = rand(40, 48);
       const hp = 2;
       const speed = rand(150, 220);
-      enemies.push({ type: "kamikaze", x, y, r, hp, maxHp: hp, speed, vx: 0, shootTimer: 0 });
+      enemies.push({ type: "kamikaze", x, y, r, hp, maxHp: hp, speed, vx: 0, shootTimer: 0, bunVariant: Math.floor(Math.random() * 3) });
     }
     else if (type === "invincible") {
-      const r = rand(26, 34);
+      const r = rand(42, 52);
       const hp = 3;
       const speed = rand(90, 130);
-      enemies.push({ type: "invincible", x, y, r, hp, maxHp: hp, speed, vx: rand(-30, 30), shootTimer: 0, invTimer: 0, invPhase: false });
+      enemies.push({ type: "invincible", x, y, r, hp, maxHp: hp, speed, vx: rand(-30, 30), shootTimer: 0, invTimer: 0, invPhase: false, bunVariant: Math.floor(Math.random() * 3) });
     }
     else if (type === "tank") {
-      const r = rand(38, 48);
+      const r = rand(64, 76);
       const hp = 8;
       const speed = rand(50, 80);
-      enemies.push({ type: "tank", x, y, r, hp, maxHp: hp, speed, vx: rand(-15, 15), shootTimer: 0 });
+      enemies.push({ type: "tank", x, y, r, hp, maxHp: hp, speed, vx: rand(-15, 15), shootTimer: 0, bunVariant: Math.floor(Math.random() * 3) });
     }
     else if (type === "spiral") {
       const angle = (enemies.length * 0.5) % (Math.PI * 2);
@@ -879,10 +1258,10 @@
       const cy = 100;
       const sx = cx + Math.cos(angle) * dist;
       const sy = cy + Math.sin(angle) * dist;
-      const r = rand(24, 32);
+      const r = rand(40, 50);
       const hp = 2;
       const speed = rand(90, 140);
-      enemies.push({ type: "spiral", x: sx, y: sy, r, hp, maxHp: hp, speed, vx: rand(-30, 30), shootTimer: 0 });
+      enemies.push({ type: "spiral", x: sx, y: sy, r, hp, maxHp: hp, speed, vx: rand(-30, 30), shootTimer: 0, bunVariant: Math.floor(Math.random() * 3) });
     }
     else if (type === "chaos") {
       // Random mix of all types
@@ -894,10 +1273,10 @@
       return;
     }
     else if (type === "valentine") {
-      const r = rand(24, 32);
+      const r = rand(40, 50);
       const hp = 3;
       const speed = rand(100, 150);
-      enemies.push({ type: "valentine", x, y, r, hp, maxHp: hp, speed, vx: rand(-40, 40), shootTimer: 0 });
+      enemies.push({ type: "valentine", x, y, r, hp, maxHp: hp, speed, vx: rand(-40, 40), shootTimer: 0, bunVariant: Math.floor(Math.random() * 3) });
     }
   }
 
@@ -937,7 +1316,7 @@
 
     boss = {
       x: W * 0.5, y: 110,
-      r: 85,
+      r: 130,
       hp,
       maxHp: hp,
       phase: 1,
@@ -1032,6 +1411,11 @@
     playDamageSound();
     if (player.hp <= 0) {
       running = false;
+      // Show retry + menu buttons on mobile
+      const gameBtns = document.getElementById("gameBtns");
+      const retryBtn = document.getElementById("retryBtn");
+      retryBtn.textContent = "🔄 Retry";
+      gameBtns.classList.add("show");
     }
   }
 
@@ -1063,26 +1447,18 @@
     let ax = (right ? 1 : 0) - (left ? 1 : 0);
     let ay = (down ? 1 : 0) - (up ? 1 : 0);
     
-    // Touch-to-move: smoothly move toward touch position
+    // Touch-to-move: move player directly to touch position
     if (touchInput.targetX !== null && touchInput.targetY !== null) {
-      const dx = touchInput.targetX - player.x;
-      const dy = touchInput.targetY - player.y;
-      const dist = Math.hypot(dx, dy);
-      
-      if (dist > 20) {
-        ax = dx / dist;
-        ay = dy / dist;
-      } else {
-        ax = 0;
-        ay = 0;
-      }
-    } else {
+      // Move player directly to touch position (follows finger exactly)
+      player.x = touchInput.targetX;
+      player.y = touchInput.targetY;
+    } else if (ax !== 0 || ay !== 0) {
+      // Keyboard movement
       const len = Math.hypot(ax, ay) || 1;
       ax /= len; ay /= len;
+      player.x += ax * player.speed * dt;
+      player.y += ay * player.speed * dt;
     }
-
-    player.x += ax * player.speed * dt;
-    player.y += ay * player.speed * dt;
 
     player.x = clamp(player.x, player.r + 6, W - player.r - 6);
     player.y = clamp(player.y, player.r + 6, H - player.r - 6);
@@ -1289,14 +1665,15 @@
               type: "miniboss",
               x: W * (0.3 + k * 0.4),
               y: 120,
-              r: 65,
+              r: 100,
               hp: boss.hp * 0.5,
               maxHp: boss.maxHp * 0.5,
               speed: 0,
               vx: 0,
               shootTimer: 0.3,
               isBoss: true,
-              bossId: k
+              bossId: k,
+              bunVariant: Math.floor(Math.random() * 3)
             });
           }
           boss.hp = 0;
@@ -1410,6 +1787,7 @@
                     speed: e.speed * 1.3,
                     vx: Math.cos(angle) * 60,
                     shootTimer: 0,
+                    bunVariant: Math.floor(Math.random() * 3),
                     canSplit: false
                   });
                 }
@@ -1480,6 +1858,20 @@
       }
       saveProgress();
       running = false;
+      
+      // Check if this is the final level
+      if (currentLevelConfig.id === LEVELS.length) {
+        // Show Valentine proposal instead of normal completion
+        setTimeout(() => {
+          showValentineProposal();
+        }, 2000); // Wait 2 seconds after victory
+      } else {
+        // Show next level + menu buttons on mobile
+        const gameBtns = document.getElementById("gameBtns");
+        const retryBtn = document.getElementById("retryBtn");
+        retryBtn.textContent = "➡️ Next Level";
+        gameBtns.classList.add("show");
+      }
     }
   }
 
@@ -1504,23 +1896,23 @@
       
       if (usePlayerImg) {
         // Draw player image as circle (clip to circle)
-        const radius = 35;
+        const radius = 60;
         ctx.beginPath();
         ctx.arc(0, 0, radius, 0, Math.PI * 2);
         ctx.closePath();
         ctx.clip();
-        ctx.drawImage(playerImg, -radius, -radius, radius * 2, radius * 2);
+        ctx.drawImage(characterImgs[selectedCharacter], -radius, -radius, radius * 2, radius * 2);
       } else {
-        // Fallback: car body
+        // Fallback: car body (wider)
         ctx.fillStyle = "#9aa0aa";
-        roundRect(-34, -22, 68, 44, 10, true);
+        roundRect(-55, -32, 110, 64, 14, true);
         // windshield
         ctx.fillStyle = "rgba(20,20,30,.55)";
-        roundRect(-18, -16, 36, 22, 8, true);
+        roundRect(-32, -24, 64, 36, 12, true);
         // lights
         ctx.fillStyle = "rgba(255,100,130,.9)";
-        ctx.fillRect(-28, -23, 9, 6);
-        ctx.fillRect(18, -23, 9, 6);
+        ctx.fillRect(-48, -34, 16, 10);
+        ctx.fillRect(32, -34, 16, 10);
       }
       
       ctx.restore();
@@ -1619,6 +2011,17 @@
       ctx.save();
       ctx.translate(e.x, e.y);
       
+      // Check if we should use enemy image
+      if (useEnemyImg && e.bunVariant !== undefined) {
+        // Draw bun1/bun2/bun3.jpeg image as rounded rectangle
+        const imgSize = e.r * 2.6;
+        ctx.save();
+        ctx.beginPath();
+        roundRect(-imgSize/2, -imgSize/2, imgSize, imgSize, 12, false);
+        ctx.clip();
+        ctx.drawImage(enemyImgs[e.bunVariant], -imgSize/2, -imgSize/2, imgSize, imgSize);
+        ctx.restore();
+      } else {
       // Different visuals per type
       if (e.type === "shielded") {
         // Blue with shield
@@ -1756,6 +2159,7 @@
         ctx.fillStyle = "rgba(255,80,120,.95)";
         ctx.fillRect(-e.r*0.6, -3, e.r*1.2, 6);
       }
+      } // Close useEnemyImg else block
       
       ctx.restore();
     }
@@ -1816,14 +2220,28 @@
         ctx.textBaseline = "middle";
         ctx.fillText(weapon.icon, 0, 1);
       } else {
-        // Stat upgrades - small, white
-        ctx.fillStyle = "rgba(255,255,255,.92)";
-        roundRect(-12, -12, 24, 24, 8, true);
-        ctx.fillStyle = "rgba(255,80,120,.95)";
-        ctx.font = "bold 12px system-ui";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(d.kind === "fireRate" ? "FR" : d.kind === "spread" ? "SP" : "DMG", 0, 1);
+        // Stat upgrades - use images or fallback to text
+        const hasImg = dropImgsLoaded[d.kind];
+        if (hasImg) {
+          // Draw drop image
+          const size = 28;
+          ctx.drawImage(dropImgs[d.kind], -size/2, -size/2, size, size);
+        } else {
+          // Fallback: text with emojis
+          ctx.fillStyle = "rgba(255,255,255,.92)";
+          roundRect(-12, -12, 24, 24, 8, true);
+          ctx.font = "bold 18px system-ui";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          
+          // Different emojis for each type
+          let emoji = "";
+          if (d.kind === "damage") emoji = "💪"; // biceps
+          else if (d.kind === "fireRate") emoji = "⚡"; // lightning bolt
+          else if (d.kind === "spread") emoji = "🎯"; // target/bullseye
+          
+          ctx.fillText(emoji, 0, 1);
+        }
       }
       ctx.restore();
     }
@@ -1874,9 +2292,11 @@
         if (currentLevelConfig.id < LEVELS.length) {
           ctx.fillText("Apasă R pentru următorul nivel", W/2, H/2 + 25);
         } else {
-          ctx.fillText("Ai completat toate nivelurile! 💕", W/2, H/2 + 25);
+          ctx.fillText("💕💕💕", W/2, H/2 + 25);
         }
-        ctx.fillText("Apasă ESC pentru meniu", W/2, H/2 + 50);
+        if (currentLevelConfig.id < LEVELS.length) {
+          ctx.fillText("Apasă ESC pentru meniu", W/2, H/2 + 50);
+        }
       } else {
         ctx.fillText("GAME OVER", W/2, H/2 - 18);
         ctx.font = "500 16px system-ui";
@@ -1980,7 +2400,125 @@
     running = true;
   }
 
+  // ---------- VALENTINE PROPOSAL ----------
+  function showValentineProposal() {
+    const modal = document.getElementById("valentineModal");
+    modal.classList.add("show");
+    
+    const noBtn = document.getElementById("noBtn");
+    const yesBtn = document.getElementById("yesBtn");
+    const giftSection = document.getElementById("giftSection");
+    const collectGiftBtn = document.getElementById("collectGiftBtn");
+    
+    // Reset states
+    noBtn.style.display = "block";
+    noBtn.classList.remove("hide");
+    giftSection.classList.remove("show");
+    
+    // No button handler - button breaks and disappears
+    noBtn.onclick = () => {
+      noBtn.classList.add("hide");
+      setTimeout(() => {
+        noBtn.style.display = "none";
+      }, 1000);
+    };
+    
+    // Yes button handler - show gift section
+    yesBtn.onclick = () => {
+      yesBtn.style.display = "none";
+      if (noBtn.style.display !== "none") {
+        noBtn.style.display = "none";
+      }
+      giftSection.classList.add("show");
+    };
+    
+    // Collect gift handler - celebration!
+    collectGiftBtn.onclick = () => {
+      modal.classList.remove("show");
+      startCelebration();
+    };
+  }
+  
+  function createConfetti() {
+    const colors = ["#ff6090", "#ff3366", "#ffd700", "#ff69b4", "#ff1493", "#00ff00", "#00ffff"];
+    const celebration = document.getElementById("celebration");
+    
+    for (let i = 0; i < 150; i++) {
+      setTimeout(() => {
+        const confetti = document.createElement("div");
+        confetti.style.position = "fixed";
+        confetti.style.left = Math.random() * window.innerWidth + "px";
+        confetti.style.top = "-10px";
+        confetti.style.width = (Math.random() * 10 + 5) + "px";
+        confetti.style.height = (Math.random() * 10 + 5) + "px";
+        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        confetti.style.opacity = "1";
+        confetti.style.borderRadius = Math.random() > 0.5 ? "50%" : "0";
+        confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+        confetti.style.zIndex = "1002";
+        confetti.style.pointerEvents = "none";
+        
+        celebration.appendChild(confetti);
+        
+        const duration = Math.random() * 3000 + 2000;
+        const drift = (Math.random() - 0.5) * 200;
+        
+        confetti.animate([
+          { transform: `translateY(0px) translateX(0px) rotate(0deg)`, opacity: 1 },
+          { transform: `translateY(${window.innerHeight + 100}px) translateX(${drift}px) rotate(${Math.random() * 720}deg)`, opacity: 0 }
+        ], {
+          duration: duration,
+          easing: "cubic-bezier(0.25, 0.46, 0.45, 0.94)"
+        });
+        
+        setTimeout(() => {
+          confetti.remove();
+        }, duration);
+      }, i * 20);
+    }
+  }
+  
+  function startCelebration() {
+    const celebration = document.getElementById("celebration");
+    const congratsMsg = document.getElementById("congratsMsg");
+    
+    celebration.classList.add("active");
+    
+    const messages = [
+      "💕 I LOVE YOU! 💕",
+      "🎉 YOU'RE THE BEST! 🎉",
+      "💖 FOREVER MINE! 💖",
+      "✨ MY VALENTINE! ✨"
+    ];
+    
+    let msgIndex = 0;
+    congratsMsg.textContent = messages[msgIndex];
+    
+    // Create confetti
+    createConfetti();
+    
+    // Change message every 2 seconds
+    const messageInterval = setInterval(() => {
+      msgIndex = (msgIndex + 1) % messages.length;
+      congratsMsg.textContent = messages[msgIndex];
+    }, 2000);
+    
+    // Create new confetti bursts
+    const confettiInterval = setInterval(() => {
+      createConfetti();
+    }, 3000);
+    
+    // After 12 seconds, show menu
+    setTimeout(() => {
+      celebration.classList.remove("active");
+      clearInterval(messageInterval);
+      clearInterval(confettiInterval);
+      showMenu();
+    }, 12000);
+  }
+
   // Initialize
+  resizeCanvas(); // Set canvas dimensions based on screen
   loadProgress();
   showMenu();
   loop();
