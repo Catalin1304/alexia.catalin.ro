@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Catch the Love</title>
+  <style>
+    :root { --bg:#0b0f19; --card:#111a2e; --text:#e9eefc; --muted:#a7b1d6; }
+    html,body { height:100%; margin:0; background: radial-gradient(1200px 800px at 50% 30%, #1a2a55 0%, var(--bg) 55%, #05070f 100%); color:var(--text); font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; }
+    .wrap { height:100%; display:flex; align-items:center; justify-content:center; padding:16px; box-sizing:border-box; }
+    .shell { width:min(520px, 100%); }
+    .card { background: color-mix(in srgb, var(--card) 80%, transparent); border:1px solid rgba(255,255,255,.10); border-radius:20px; box-shadow: 0 20px 60px rgba(0,0,0,.45); overflow:hidden; }
+    .top { padding:14px 16px; display:flex; gap:12px; align-items:center; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,.08); }
+    .title { font-weight:700; letter-spacing:.2px; }
+    .hud { display:flex; gap:12px; font-variant-numeric: tabular-nums; color:var(--muted); }
+    .hud b { color:var(--text); }
+    canvas { width:100%; height:auto; display:block; background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0)); touch-action:none; }
+    .bottom { padding:14px 16px; display:flex; gap:10px; align-items:center; justify-content:space-between; }
+    .btn { border:1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.06); color:var(--text); border-radius:14px; padding:10px 12px; font-weight:600; cursor:pointer; }
+    .btn:active { transform: translateY(1px); }
+    .btn.primary { background: rgba(255, 68, 118, .22); border-color: rgba(255, 68, 118, .45); }
+    .hint { color:var(--muted); font-size:13px; line-height:1.3; }
+    .overlay {
+      position:fixed; inset:0; display:none; align-items:center; justify-content:center; padding:16px; box-sizing:border-box;
+      background: rgba(0,0,0,.55); backdrop-filter: blur(8px);
+    }
+    .modal {
+      width:min(520px, 100%); background: rgba(15,20,40,.92); border:1px solid rgba(255,255,255,.14);
+      border-radius:22px; padding:18px; box-shadow: 0 30px 90px rgba(0,0,0,.6);
+    }
+    .modal h2 { margin:0 0 8px 0; font-size:22px; }
+    .modal p { margin:0 0 14px 0; color:var(--muted); }
+    .actions { display:flex; gap:10px; flex-wrap:wrap; }
+    .actions .btn { flex:1; min-width:140px; }
+    .tiny { font-size:12px; color:var(--muted); margin-top:10px; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="shell">
+    <div class="card">
+      <div class="top">
+        <div class="title">Catch the Love</div>
+        <div class="hud">
+          <div>❤️ <b id="score">0</b>/14</div>
+          <div>⏱️ <b id="time">30.0</b>s</div>
+        </div>
+      </div>
+      <canvas id="c" width="520" height="720"></canvas>
+      <div class="bottom">
+        <button class="btn primary" id="start">Start</button>
+        <div class="hint">Pe telefon: trage coșul stânga/dreapta. Pe PC: mouse/drag.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2 id="resultTitle">…</h2>
+    <p id="resultText">…</p>
+    <div class="actions" id="actions"></div>
+    <div class="tiny" id="tiny"></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById("c");
+  const ctx = canvas.getContext("2d");
+
+  const scoreEl = document.getElementById("score");
+  const timeEl = document.getElementById("time");
+  const startBtn = document.getElementById("start");
+
+  const overlay = document.getElementById("overlay");
+  const resultTitle = document.getElementById("resultTitle");
+  const resultText = document.getElementById("resultText");
+  const actions = document.getElementById("actions");
+  const tiny = document.getElementById("tiny");
+
+  const TARGET = 14;
+  const DURATION = 30_000; // ms
+
+  // Scale canvas to device width while keeping internal coords
+  function fitCanvas() {
+    const cardWidth = canvas.clientWidth || 520;
+    const scale = cardWidth / 520;
+    canvas.style.height = (720 * scale) + "px";
+  }
+  window.addEventListener("resize", fitCanvas);
+  fitCanvas();
+
+  // Game state
+  let running = false;
+  let startTime = 0;
+  let lastT = 0;
+  let score = 0;
+
+  // Basket
+  const basket = { x: 260, y: 660, w: 120, h: 24, vx: 0 };
+  let drag = { active: false, offsetX: 0 };
+
+  // Hearts
+  const hearts = [];
+  function spawnHeart() {
+    const x = 30 + Math.random() * (520 - 60);
+    const r = 10 + Math.random() * 10;
+    const vy = 140 + Math.random() * 220; // px/s
+    const sway = (Math.random() * 2 - 1) * 70; // px
+    const phase = Math.random() * Math.PI * 2;
+    hearts.push({ x, y: -20, r, vy, sway, phase, t: 0 });
+  }
+
+  function reset() {
+    hearts.length = 0;
+    score = 0;
+    scoreEl.textContent = score;
+    basket.x = 260;
+    basket.vx = 0;
+    startTime = performance.now();
+    lastT = startTime;
+    running = true;
+  }
+
+  function endGame(win) {
+    running = false;
+    showResult(win);
+  }
+
+  function showResult(win) {
+    overlay.style.display = "flex";
+    actions.innerHTML = "";
+
+    if (win) {
+      resultTitle.textContent = "You did it. ❤️";
+      resultText.textContent = "Ai prins 14 inimioare. Acum întrebarea importantă:";
+      const yes = document.createElement("button");
+      yes.className = "btn primary";
+      yes.textContent = "YES — Be my Valentine";
+      yes.onclick = () => {
+        resultTitle.textContent = "Perfect. ❤️";
+        resultText.textContent = "Știam eu. Te iubesc.";
+        actions.innerHTML = "";
+        const again = document.createElement("button");
+        again.className = "btn";
+        again.textContent = "Play again";
+        again.onclick = () => { overlay.style.display = "none"; reset(); };
+        actions.appendChild(again);
+        tiny.textContent = "";
+      };
+
+      const no = document.createElement("button");
+      no.className = "btn";
+      no.textContent = "NO";
+      // Button tries to dodge
+      no.onmouseenter = () => dodge(no);
+      no.ontouchstart = (e) => { e.preventDefault(); dodge(no); };
+      no.onclick = () => dodge(no);
+
+      actions.appendChild(yes);
+      actions.appendChild(no);
+      tiny.textContent = "P.S. Butonul NO are personalitate proprie.";
+    } else {
+      resultTitle.textContent = "Almost. 😤";
+      resultText.textContent = "Mai încearcă o dată. Trebuie 14 inimioare în 30 secunde.";
+      const again = document.createElement("button");
+      again.className = "btn primary";
+      again.textContent = "Try again";
+      again.onclick = () => { overlay.style.display = "none"; reset(); };
+      actions.appendChild(again);
+      tiny.textContent = "";
+    }
+  }
+
+  function dodge(btn) {
+    // Simple dodge inside modal bounds
+    const modal = btn.closest(".modal");
+    const rect = modal.getBoundingClientRect();
+    const bw = btn.offsetWidth, bh = btn.offsetHeight;
+
+    btn.style.position = "relative";
+    const maxX = Math.max(10, rect.width - bw - 22);
+    const maxY = Math.max(10, 120); // keep within actions area vibe
+    const x = 10 + Math.random() * maxX;
+    const y = -10 - Math.random() * maxY; // jump slightly upward
+    btn.style.left = x + "px";
+    btn.style.top = y + "px";
+
+    // Also shrink a bit each dodge
+    const s = Math.max(0.65, (btn._scale || 1) - 0.06);
+    btn._scale = s;
+    btn.style.transform = `scale(${s})`;
+  }
+
+  // Input: pointer drag on canvas
+  function pointerX(ev) {
+    const r = canvas.getBoundingClientRect();
+    const x = (ev.clientX - r.left) * (canvas.width / r.width);
+    return x;
+  }
+
+  canvas.addEventListener("pointerdown", (ev) => {
+    canvas.setPointerCapture(ev.pointerId);
+    const x = pointerX(ev);
+    drag.active = true;
+    drag.offsetX = x - basket.x;
+  });
+
+  canvas.addEventListener("pointermove", (ev) => {
+    if (!drag.active) return;
+    const x = pointerX(ev);
+    basket.x = x - drag.offsetX;
+    basket.x = Math.max(basket.w/2, Math.min(520 - basket.w/2, basket.x));
+  });
+
+  canvas.addEventListener("pointerup", () => drag.active = false);
+  canvas.addEventListener("pointercancel", () => drag.active = false);
+
+  // Start
+  startBtn.addEventListener("click", () => {
+    overlay.style.display = "none";
+    reset();
+  });
+
+  // Rendering helpers
+  function drawHeart(x, y, s) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(s, s);
+    ctx.beginPath();
+    // simple heart path
+    ctx.moveTo(0, 6);
+    ctx.bezierCurveTo(0, -6, -14, -8, -14, 4);
+    ctx.bezierCurveTo(-14, 16, 0, 22, 0, 30);
+    ctx.bezierCurveTo(0, 22, 14, 16, 14, 4);
+    ctx.bezierCurveTo(14, -8, 0, -6, 0, 6);
+    ctx.closePath();
+    ctx.fillStyle = "rgba(255, 68, 118, 0.95)";
+    ctx.shadowColor = "rgba(255, 68, 118, 0.45)";
+    ctx.shadowBlur = 18;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawBasket() {
+    // body
+    const x = basket.x - basket.w/2;
+    const y = basket.y - basket.h/2;
+    ctx.save();
+    ctx.fillStyle = "rgba(255,255,255,.10)";
+    ctx.strokeStyle = "rgba(255,255,255,.20)";
+    ctx.lineWidth = 2;
+    roundRect(x, y, basket.w, basket.h, 12);
+    ctx.fill();
+    ctx.stroke();
+
+    // handle highlight
+    ctx.strokeStyle = "rgba(255,255,255,.16)";
+    ctx.beginPath();
+    ctx.arc(basket.x, y, basket.w*0.34, Math.PI, 2*Math.PI);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function roundRect(x, y, w, h, r) {
+    const rr = Math.min(r, w/2, h/2);
+    ctx.beginPath();
+    ctx.moveTo(x+rr, y);
+    ctx.arcTo(x+w, y, x+w, y+h, rr);
+    ctx.arcTo(x+w, y+h, x, y+h, rr);
+    ctx.arcTo(x, y+h, x, y, rr);
+    ctx.arcTo(x, y, x+w, y, rr);
+    ctx.closePath();
+  }
+
+  // Game loop
+  let spawnAcc = 0;
+  function loop(t) {
+    requestAnimationFrame(loop);
+
+    // background
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle = "rgba(255,255,255,.03)";
+    for (let i=0;i<18;i++){
+      const px = (i*37 + (t*0.01)) % 520;
+      const py = (i*61 + (t*0.015)) % 720;
+      ctx.fillRect(px, py, 2, 2);
+    }
+
+    if (!running) {
+      drawBasket();
+      return;
+    }
+
+    const dt = Math.min(0.033, (t - lastT) / 1000);
+    lastT = t;
+
+    const elapsed = t - startTime;
+    const remaining = Math.max(0, DURATION - elapsed);
+    timeEl.textContent = (remaining / 1000).toFixed(1);
+
+    // spawn hearts over time
+    spawnAcc += dt;
+    const spawnRate = 0.35; // seconds per heart (~3/s)
+    while (spawnAcc > spawnRate) {
+      spawnAcc -= spawnRate;
+      spawnHeart();
+    }
+
+    // update hearts
+    for (let i = hearts.length - 1; i >= 0; i--) {
+      const h = hearts[i];
+      h.t += dt;
+      h.y += h.vy * dt;
+      h.x += Math.sin(h.t*2 + h.phase) * h.sway * dt * 0.35;
+
+      // draw
+      drawHeart(h.x, h.y, h.r/18);
+
+      // collision with basket (simple AABB)
+      const bx1 = basket.x - basket.w/2, bx2 = basket.x + basket.w/2;
+      const by1 = basket.y - basket.h/2, by2 = basket.y + basket.h/2;
+      if (h.x > bx1 && h.x < bx2 && h.y > by1-8 && h.y < by2+12) {
+        hearts.splice(i,1);
+        score++;
+        scoreEl.textContent = score;
+        if (score >= TARGET) endGame(true);
+        continue;
+      }
+
+      // remove if offscreen
+      if (h.y > 760) hearts.splice(i,1);
+    }
+
+    // draw basket
+    drawBasket();
+
+    // time end
+    if (remaining <= 0) endGame(score >= TARGET);
+  }
+
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
